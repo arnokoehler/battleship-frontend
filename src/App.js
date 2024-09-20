@@ -20,6 +20,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import './index.css'; // Ensure this import is present
 
 const axiosBackend = axios.create({
     baseURL: 'http://localhost:8080',
@@ -219,6 +220,7 @@ const App = () => {
                                     </Typography>
                                     <Button
                                         variant="contained"
+                                        className="button-spacing"
                                         onClick={() => joinGame(game.id, 'A')}
                                         disabled={disabledButtons[`${game.id}-A`]}
                                     >
