@@ -11,3 +11,65 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.cell {
+  width: 30px;
+  height: 30px;
+  background-color: #1976d2; /* Same color as the buttons */
+  border: 1px solid #000;
+  margin: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+}
+
+.pin {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: gray; /* Default pin color */
+}
+
+.pin.ship {
+  background-color: white; /* Ship pin color */
+}
+
+.pin.hit {
+  background-color: red; /* Hit pin color */
+}
+
+.pin.miss {
+  background-color: yellow; /* Miss pin color */
+}
+
+.boards-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.board {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.boat-types {
+  flex: 0.3;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.boat-type {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.boat-type-icon {
+  margin-right: 10px;
+}
