@@ -18,6 +18,8 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const axiosBackend = axios.create({
     baseURL: 'http://localhost:8080',
@@ -33,6 +35,15 @@ const App = () => {
     const [ships, setShips] = useState([]);
     const [placingShip, setPlacingShip] = useState(null);
     const [placementDirection, setPlacementDirection] = useState('horizontal');
+    const [inventory, setInventory] = useState([
+        { type: 'Carrier', size: 5, icon: <CarrierIcon className="boat-type-icon" /> },
+        { type: 'Battleship', size: 4, icon: <BattleshipIcon className="boat-type-icon" /> },
+        { type: 'Destroyer', size: 3, icon: <DestroyerIcon className="boat-type-icon" /> },
+        { type: 'Submarine', size: 3, icon: <SubmarineIcon className="boat-type-icon" /> },
+        { type: 'PatrolBoat', size: 2, icon: <PatrolBoatIcon className="boat-type-icon" /> }
+    ]);
+    const [currentPage, setCurrentPage] = useState(0);
+    const gamesPerPage = 5;
 
     useEffect(() => {
         const eventSource = new EventSource('http://localhost:8080/games');
@@ -40,6 +51,18 @@ const App = () => {
         eventSource.onmessage = (event) => {
             const parsedData = JSON.parse(event.data);
             setGames(parsedData);
+
+            // Disable join buttons for games where the player has already joined
+            const disabled = {};
+            parsedData.forEach(game => {
+                if (game.players && game.players.includes('A')) {
+                    disabled[`${game.id}-A`] = true;
+                }
+                if (game.players && game.players.includes('B')) {
+                    disabled[`${game.id}-B`] = true;
+                }
+            });
+            setDisabledButtons(disabled);
         };
 
         eventSource.onerror = (error) => {
@@ -68,6 +91,7 @@ const App = () => {
                 gameEventSource.onmessage = (event) => {
                     const data = JSON.parse(event.data);
                     setGameUpdates(data);
+                    setSelectedGame({ id: gameId, player });
                 };
 
                 gameEventSource.onerror = (error) => {
@@ -99,13 +123,15 @@ const App = () => {
             });
             // Update the ships state
             setShips([...ships, { x, y, direction, type }]);
+            // Remove the placed ship from the inventory
+            setInventory(inventory.filter(boat => boat.type !== type));
         } catch (error) {
             console.error('Error placing ship:', error);
         }
     };
 
     const handleCellClick = (x, y) => {
-        if (placingShip) {
+        if (placingShip && selectedGame) {
             placeShip(selectedGame.id, 'A', x, y, placementDirection, placingShip.type);
             setPlacingShip(null);
         }
@@ -143,13 +169,17 @@ const App = () => {
         );
     };
 
-    const boatTypes = [
-        { type: 'Carrier', size: 5, icon: <CarrierIcon className="boat-type-icon" /> },
-        { type: 'Battleship', size: 4, icon: <BattleshipIcon className="boat-type-icon" /> },
-        { type: 'Destroyer', size: 3, icon: <DestroyerIcon className="boat-type-icon" /> },
-        { type: 'Submarine', size: 3, icon: <SubmarineIcon className="boat-type-icon" /> },
-        { type: 'PatrolBoat', size: 2, icon: <PatrolBoatIcon className="boat-type-icon" /> }
-    ];
+    const handleNextPage = () => {
+        if ((currentPage + 1) * gamesPerPage < games.length) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (currentPage > 0) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     return (
         <div>
@@ -165,8 +195,16 @@ const App = () => {
 
             <div>
                 <h2>Available Games</h2>
+                <div>
+                    <Button onClick={handlePreviousPage} disabled={currentPage === 0}>
+                        <ArrowBackIcon />
+                    </Button>
+                    <Button onClick={handleNextPage} disabled={(currentPage + 1) * gamesPerPage >= games.length}>
+                        <ArrowForwardIcon />
+                    </Button>
+                </div>
                 <Grid2 container spacing={2}>
-                    {games.map((game) => (
+                    {games.slice(currentPage * gamesPerPage, (currentPage + 1) * gamesPerPage).map((game) => (
                         <Grid2 item xs={12} sm={6} md={4} key={game.id}>
                             <Card>
                                 <CardContent>
@@ -200,11 +238,11 @@ const App = () => {
                 </Grid2>
             </div>
 
-            {gameUpdates && (
+            {gameUpdates && selectedGame && (
                 <div className="boards-container">
                     <div className="board">
                         <h3>Opponent</h3>
-                        {gameUpdates.boards && gameUpdates.boards.A && gameUpdates.boards.A.map((row, rowIndex) => (
+                        {gameUpdates.boards && gameUpdates.boards[selectedGame.player === 'A' ? 'B' : 'A'] && gameUpdates.boards[selectedGame.player === 'A' ? 'B' : 'A'].map((row, rowIndex) => (
                             <Grid2 container item key={rowIndex} spacing={1}>
                                 {row.map((cell, colIndex) => (
                                     <Grid2 item key={colIndex} xs={1}>
@@ -216,7 +254,7 @@ const App = () => {
                     </div>
                     <div className="board">
                         <h3>You</h3>
-                        {gameUpdates.boards && gameUpdates.boards.B && gameUpdates.boards.B.map((row, rowIndex) => (
+                        {gameUpdates.boards && gameUpdates.boards[selectedGame.player] && gameUpdates.boards[selectedGame.player].map((row, rowIndex) => (
                             <Grid2 container item key={rowIndex} spacing={1}>
                                 {row.map((cell, colIndex) => (
                                     <Grid2 item key={colIndex} xs={1}>
@@ -241,8 +279,12 @@ const App = () => {
                                 Vertical
                             </ToggleButton>
                         </ToggleButtonGroup>
-                        {boatTypes.map((boat, index) => (
-                            <div key={index} className="boat-type" onClick={() => handleBoatClick(boat)}>
+                        {inventory.map((boat, index) => (
+                            <div
+                                key={index}
+                                className={`boat-type ${placingShip && placingShip.type === boat.type ? 'selected' : ''}`}
+                                onClick={() => handleBoatClick(boat)}
+                            >
                                 {boat.icon}
                                 <Typography variant="body1">{boat.type} (Size: {boat.size})</Typography>
                             </div>
