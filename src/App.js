@@ -115,14 +115,14 @@ const App = () => {
 
     const placeShip = async (gameId, player, x, y, direction, type) => {
         try {
-            await axiosBackend.post(`/${gameId}/players/${player}/ships`, {
+            const response = await axiosBackend.post(`/games/${gameId}/players/${player}/ships`, {
                 x,
                 y,
                 direction,
                 type
             });
-            // Update the ships state
-            setShips([...ships, { x, y, direction, type }]);
+            // Update the gameUpdates state with the new ship placement
+            setGameUpdates(response.data);
             // Remove the placed ship from the inventory
             setInventory(inventory.filter(boat => boat.type !== type));
         } catch (error) {
@@ -132,7 +132,7 @@ const App = () => {
 
     const handleCellClick = (x, y) => {
         if (placingShip && selectedGame) {
-            placeShip(selectedGame.id, 'A', x, y, placementDirection, placingShip.type);
+            placeShip(selectedGame.id, selectedGame.player, x, y, placementDirection, placingShip.type);
             setPlacingShip(null);
         }
     };
@@ -182,7 +182,7 @@ const App = () => {
     };
 
     return (
-        <div>
+        <div className="container">
             <h1>Battleship Game</h1>
 
             <Button

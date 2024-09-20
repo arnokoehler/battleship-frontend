@@ -12,6 +12,14 @@ code {
     monospace;
 }
 
+.container {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+}
+
 .cell {
   width: 30px;
   height: 30px;
